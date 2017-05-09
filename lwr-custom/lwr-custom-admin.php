@@ -127,13 +127,43 @@
 		register_setting( 'lwr_emergency_menu_settings_group', 'modal_background' );
 		register_setting( 'lwr_emergency_menu_settings_group', 'modal_text' );
 	}
+	
+	function lwr_emergency_menu_page_tabs( $current = 'bar' ) {
+		$tabs = array( 
+			'bar' => 'Red Bar Settings',
+			'modal' => 'Modal Window Settings'
+			);
+		echo '<div id="icon-themes" class="icon32"><br /></div>';
+		echo '<h2 class="nav-tab-wrapper">';
+		foreach( $tabs as $tab=>$name){
+			$class = ( $tab == $current ) ? ' nav-tab-active' : '';
+			echo '<a class="nav-tab' . $class . '" href="?page=lwr_emergency&tab=' .$tab.'">'.$name.'</a>';
+		}
+		echo '</h2>';
+	}
 
 	function lwr_emergency_menu_page() {
 		if ( !current_user_can( 'edit_others_posts' ) )  {
 			wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
-		} ?>
+		} 
 
+
+		?>
 		<div class="wrap custom-admin-menu">
+		<?php if ( isset ( $_GET['tab'] ) ) { 
+			lwr_emergency_menu_page_tabs($_GET['tab']); 
+		} else {
+			lwr_emergency_menu_page_tabs('bar');
+		} 
+		
+		if( isset ( $_GET['tab'])) {
+			$tab = $_GET['tab'];
+		} else{
+			$tab = 'bar';
+		}
+		switch ( $tab ){
+			case 'bar' :			
+		?>
 			<h2>Emergency Alert Settings</h2>
 
 			<form id="posts-filter" method="post" action="options.php">
@@ -164,8 +194,22 @@
 					<label for="emergency_url">URL Link</label>
 					<input type="url" name="emergency_url" value="<?php echo esc_url( get_option('emergency_url') ); ?>" />
 				</p>
-				
+				<?php submit_button(); ?>
+			</form>
+			<?php 
+			break;
+			
+			/***********
+			DO NOT USE UNTIL FULLY TESTED 	
+			************/ 
+			case 'modal':
+			?>
+			
 			<h2>Modal Window (Pop-Up) Alert</h2>
+			<form id="posts-filter" method="post" action="options.php">
+				<?php settings_fields( 'lwr_emergency_menu_settings_group' ); ?>
+				<?php do_settings_sections( 'lwr_emergency_menu_settings_group' ); ?>
+
 				<p>
 					<label for="modal_toggle">Show Modal Window</label>
 					<input type="checkbox" name="modal_toggle" value="on" <?php
@@ -183,21 +227,64 @@
 					<?php wp_editor( get_option('modal_text'), 'modal_text', array( 'media_buttons' => false ) ); ?>
 
 			<h3>Preview:</h3>
-					<div style="width: 600px; display:block; height: auto; border-radius:3px;">
-						<div style="position:relative; z-index: 995; text-align: center;">
-							<span style="font-size: 1.933333em; color: #fff; font-weight:800; text-transform:uppercase"><?php echo esc_attr( get_option('modal_title') ); ?><span>
+					<div class="ui-dialog" >
+						<div class="ui-dialog-titlebar">
+							&nbsp;
 						</div>
-						<div style="display:block; position: relative; width:auto; min-height: 146px; max-height:none; height:auto; margin-top:-30px;">
-							<img src="<?php echo esc_url(get_option('modal_background') ); ?>" style="position:relative; width:100%;" />
-							<div style="width:60%; float:right; padding:18px; position: absolute; top:26px; right:0; color: #fff;">
-								<?php echo get_option('modal_text'); ?>
-							</div>
+						<div id="dialog-text">
+								<?php echo '<h2>' . esc_attr( get_option('modal_title') ) . '</h2>'; 
+											echo '<p>' . get_option('modal_text') . '</p>'; ?>
+						<input type="email" placeholder="Enter your email address&hellip;" style="background-color:#f2f2f2; color: #43454b; border-radius:2px; font-weight: 400; box-shadow:inset 0 1px 1px rgba(0,0,0,.125);width:60%;margin-left:10%;">
+						<input type="submit" value="SIGN UP" style="background-color:#74c3e4; color:#fff;width:20%;">
+						</div>
 					</div>
-
-
+				
+		<style>
+			.ui-dialog {
+				position: relative;
+				width:600px;
+				max-width: 100%;
+				display:block;
+				min-height: 400px;
+				border-radius: 3px;
+				background: #fff url('<?php echo esc_url(get_option('modal_background') ); ?>') no-repeat;
+				background-size: contain;
+				padding: 10px;
+				text-align:center;
+				font-family: gesta, 'Century Gothic', arial, sans;
+			}
+			.ui-dialog-titlebar {
+				background: none;
+				border: none;
+			}
+			#dialog-text {
+				padding-top:195px;
+			}
+			#dialog-text h2 {
+				font-size: 1.93333333em;
+				color:#74c3e4;
+			}
+			#dialog-text p {
+				padding: 1em 10px;
+				margin: 1em 0;
+				color: #333;
+				width:100%;
+				float:none;
+				position: relative;
+			}
+			#dialog-text input[type=email] {
+				width: 60%;
+			}
+			
+		</style>
+				
 				<?php submit_button(); ?>
 			</form>
-
+			
+			<?php
+			break;
+		}
+		?>
 			<style>
 				div.custom-admin-menu form label { margin-right: 10px; vertical-align: top; }
 				div.custom-admin-menu form input[type="text"] { vertical-align: top; width: 45%; }

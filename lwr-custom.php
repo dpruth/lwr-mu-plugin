@@ -13,7 +13,7 @@
 	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-admin.php';
 	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-csv.php';
 	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-staff.php';
-	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-projectlocation.php';
+	// include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-projectlocation.php';
 	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-ingatherings.php';
 	// include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-postads.php';
 	include dirname( __FILE__ ) .'/lwr-custom/lwr-custom-feed.php';

@@ -1,5 +1,6 @@
 <?php
 
+
 	/******************************************************
 			Fix Admin Menu in Chrome
 	*******************************************************/
@@ -11,16 +12,19 @@
 			Admin Favicon
 	 ******************************************************/
 	function lwr_admin_favicon() {
+		$uploads = wp_upload_dir();
 		?>
-		<link rel="icon" href="//lwr.org/wp-content/uploads/FAVICON.ico" />
+		<link rel="icon" href="<?php echo esc_url( $uploads['baseurl'] . '/FAVICON.ico'); ?>" />
 		<?php
 	}
 	add_action( 'admin_enqueue_scripts', 'lwr_admin_favicon' );
 	 
 	/******************************************************
+			DEPRECATED: Edit actual homepage instead
 			Homepage Admin Option
-	 ******************************************************/
-	function lwr_register_homepage_menu_option() {
+	 ********************************* *********************/
+	/* function lwr_register_homepage_menu_option() {
+
 		add_menu_page( 'Homepage Settings', 'Homepage', 'edit_others_posts', 'lwr_homepage', 'lwr_homepage_menu_page', 'dashicons-admin-home', 27 );
 
 		add_action( 'admin_init', 'lwr_register_homepage_menu_settings' );
@@ -28,15 +32,35 @@
 	add_action( 'admin_menu', 'lwr_register_homepage_menu_option' );
 
 	function lwr_register_homepage_menu_settings() {
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_video_image' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_video_link' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_video_excerpt' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_video_instruction' );
+		register_setting( 'lwr_homepage_menu_settings_donate', 'homepage_donate_image' );
+		register_setting( 'lwr_homepage_menu_settings_donate', 'homepage_donate_item' );
+		register_setting( 'lwr_homepage_menu_settings_donate', 'homepage_donate_heading' );
+		register_setting( 'lwr_homepage_menu_settings_donate', 'homepage_donate_excerpt' );
 
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_support_year' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_support_people' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_support_countries' );
-		register_setting( 'lwr_homepage_menu_settings_group', 'homepage_support_projects' );
+		register_setting( 'lwr_homepage_menu_settings_video', 'homepage_video_image' );
+		register_setting( 'lwr_homepage_menu_settings_video', 'homepage_video_link' );
+		register_setting( 'lwr_homepage_menu_settings_video', 'homepage_video_excerpt' );
+		register_setting( 'lwr_homepage_menu_settings_video', 'homepage_video_instruction' );
+
+		register_setting( 'lwr_homepage_menu_settings_support', 'homepage_support_year' );
+		register_setting( 'lwr_homepage_menu_settings_support', 'homepage_support_people' );
+		register_setting( 'lwr_homepage_menu_settings_support', 'homepage_support_countries' );
+		register_setting( 'lwr_homepage_menu_settings_support', 'homepage_support_projects' );
+	}
+
+	function lwr_homepage_menu_page_tabs( $current = 'donate' ) {
+		$tabs = array( 
+			'donate' => 'Quick Donate',
+			'video' => 'Video Banner',
+			'stats' => 'LWR By the Numbers'
+			);
+		echo '<div id="icon-themes" class="icon32"><br /></div>';
+		echo '<h2 class="nav-tab-wrapper">';
+		foreach( $tabs as $tab=>$name){
+			$class = ( $tab == $current ) ? ' nav-tab-active' : '';
+			echo '<a class="nav-tab' . $class . '" href="?page=lwr_homepage&tab=' .$tab.'">'.$name.'</a>';
+		}
+		echo '</h2>';
 	}
 
 	function lwr_homepage_menu_page() {
@@ -47,31 +71,127 @@
 		<div class="wrap custom-admin-menu">
 			<h2>Homepage Settings</h2>
 
+			<?php if ( isset ( $_GET['tab'] ) ) { 
+			lwr_homepage_menu_page_tabs($_GET['tab']); 
+		} else {
+			lwr_homepage_menu_page_tabs('donate');
+		} 
+		
+		if( isset ( $_GET['tab'])) {
+			$tab = $_GET['tab'];
+		} else{
+			$tab = 'donate';
+		}
+		switch ( $tab ){
+			case 'donate' :	
+			
+		?>
+		<form id="posts-filter" method="post" action="options.php">
+				<?php settings_fields( 'lwr_homepage_menu_settings_donate' ); ?>
+				<?php do_settings_sections( 'lwr_homepage_menu_settings_donate' ); ?>
+			<h3>Quick Donate Option</h3>
+
+			<table class="form-table">
+				<tbody>
+					<tr>
+						<th scope="row"><label for="homepage_donate_item">WooCommerce Product </label></th>
+						<td><select name="homepage_donate_item"><?php 
+									$args = array(
+										'post_type' => array( 'product', 'product_variation'),
+										'posts_per_page' => -1,
+										'orderby' => 'date'
+										);
+				
+									$woo_query = new WP_Query ( $args );
+									while( $woo_query->have_posts() ) :
+									$woo_query->the_post();
+									
+									$product_id = get_the_ID();
+									?>
+									<option value="<?php echo $product_id; ?>" <?php 
+										if( $product_id == get_option('homepage_donate_item' ) ) {
+											echo 'selected="selected"';
+										} ?> ><?php the_title(); ?></option>
+									<?php
+									wp_reset_postdata();
+									endwhile;
+									?>
+									
+								</select>
+							</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="homepage_donate_heading">Heading</label></th>
+						<td><input type="text" name="homepage_donate_heading" value="<?php echo esc_attr( get_option('homepage_donate_heading') ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="homepage_donate_excerpt">Description</label></th>
+						<td><textarea class="text-field" name="homepage_donate_excerpt" ><?php echo esc_attr( get_option('homepage_donate_excerpt') ); ?></textarea></td>
+					</tr>
+				</tbody>
+			</table>
+				
+				<p>
+					<a class="button" id="upload_button" href="javascript:;" >Upload Background Image</a>
+				</p>
+				<div id="lwr-image-container" class="hidden">
+					<img src="<?php echo esc_url( get_option('homepage_donate_image') ); ?>" alt="" title="" />
+				</div>
+				<p class="hide-if-no-js hidden">
+					<a title="Remove Image" href="javascript:;" id="remove-image">Remove Background Image</a>
+				</p>
+				<p id="lwr-image-meta">
+					<input type="hidden" id="ad-thumbnail-src" name="homepage_donate_image" value="<?php echo esc_url( get_option('homepage_donate_image') ); ?>" />
+				</p>
+				<style>
+					#lwr-image-container { width: 600px; } 
+					#lwr-image-container img { max-width: 100%; }
+					.text-field { height: 8em; width: 600px; }
+				</style>
+
+		<?php		submit_button(); ?>
+			</form><?php 
+
+			break;
+			case 'video' :
+		?>
+		<form id="posts-filter" method="post" action="options.php">
+				<?php settings_fields( 'lwr_homepage_menu_settings_video' ); ?>
+				<?php do_settings_sections( 'lwr_homepage_menu_settings_video' ); ?>
+
+			<h3>Video Banner</h3>
+
+
+			<table class="form-table">
+				<tbody>
+					<tr>
+						<th scope="row"><label for="homepage_video_image">Banner Image</label></th>
+						<td><input type="text" name="homepage_video_image" value="<?php echo esc_attr( get_option('homepage_video_image') ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="homepage_video_link">Video Link</label></th>
+						<td><input type="text" name="homepage_video_link" value="<?php echo esc_attr( get_option('homepage_video_link') ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="homepage_video_excerpt">Video Excerpt</label></th>
+						<td><textarea name="homepage_video_excerpt" /><?php echo esc_attr( get_option('homepage_video_excerpt') ); ?></textarea></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="homepage_video_instruction">Video Instruction</label></th>
+						<td><input class="text-field" type="text" name="homepage_video_instruction" value="<?php echo esc_attr( get_option('homepage_video_instruction') ); ?>" /></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<?php submit_button(); ?>
+			</form><?php
+
+				break;
+				case 'stats' :
+			?>
 			<form id="posts-filter" method="post" action="options.php">
-				<?php settings_fields( 'lwr_homepage_menu_settings_group' ); ?>
-				<?php do_settings_sections( 'lwr_homepage_menu_settings_group' ); ?>
-
-				<h3>Video Banner</h3>
-
-				<p>
-					<label for="homepage_video_image">Banner Image</label>
-					<input type="text" name="homepage_video_image" value="<?php echo esc_attr( get_option('homepage_video_image') ); ?>" />
-				</p>
-
-				<p>
-					<label for="homepage_video_link">Video Link</label>
-					<input type="text" name="homepage_video_link" value="<?php echo esc_attr( get_option('homepage_video_link') ); ?>" />
-				</p>
-
-				<p>
-					<label for="homepage_video_excerpt">Video Excerpt</label>
-					<textarea name="homepage_video_excerpt" /><?php echo esc_attr( get_option('homepage_video_excerpt') ); ?></textarea>
-				</p>
-
-				<p>
-					<label for="homepage_video_instruction">Video Instruction</label>
-					<input class="text-field" type="text" name="homepage_video_instruction" value="<?php echo esc_attr( get_option('homepage_video_instruction') ); ?>" />
-				</p>
+				<?php settings_fields( 'lwr_homepage_menu_settings_support' ); ?>
+				<?php do_settings_sections( 'lwr_homepage_menu_settings_support' ); ?>
 
 				<h3>Reach of Support Stats</h3>
 
@@ -95,21 +215,61 @@
 					<input type="number" name="homepage_support_projects" value="<?php echo esc_attr( get_option('homepage_support_projects') ); ?>" />
 				</p>
 
-				<?php submit_button(); ?>
-			</form>
-
 			<style>
 				div.custom-admin-menu form label { margin-right: 10px; vertical-align: top; }
 				div.custom-admin-menu form input[type="text"] { vertical-align: top; width: 45%; }
 				div.custom-admin-menu form textarea { height: 100px; resize: none; width: 55%; }
 			</style>
 		</div>
-	<?php }
+		
+	<?php
+			submit_button(); ?>
+			</form><?php
+
+		break;
+		}
+		
+	}
+	
+	
+	function homepage_menu_scripts() {
+		wp_register_script('lwr-admin', plugin_dir_url( __FILE__ ) . 'js/admin.js', array('media-views', 'media-editor', 'jquery' ) );
+
+		if( 'toplevel_page_lwr_homepage' == get_current_screen()->id ) {
+			wp_enqueue_media();			
+			wp_enqueue_script('lwr-admin');
+		}
+	}
+	add_action('admin_enqueue_scripts', 'homepage_menu_scripts' );
+	
+	function homepage_setup() {
+		global $pagenow;
+		
+		if( 'media-upload.php' == $pagenow || 'async-upload.php' == $pagenow ) {
+			add_filter( 'gettext', 'replace_thickbox_text', 1, 3 );
+		}
+	}
+	add_action( 'admin_init', 'homepage_setup' );
+	
+	function replace_homepage_thickbox_text($text) {
+		if('Insert into Post' == $text) {
+			$referer = strpos( wp_get_referer(), 'lwr_homepage' );
+			if ($referer != '' ) {
+				return 'Set Background Image';
+			}
+		}
+		return $text;
+	}
+	*/
+
 
 	/******************************************************
+			DEPRECATED: Use Advanced Custom Fields "Alert Settings Instead"
 			Emergency Admin Option
 	 ******************************************************/
+	/* 
 	function lwr_register_emergency_menu_option() {
+		
 		add_menu_page( 'Emergency Settings', 'Alerts', 'edit_others_posts', 'lwr_emergency', 'lwr_emergency_menu_page', 'dashicons-megaphone', 28 );
 
 		add_action( 'admin_init', 'lwr_register_emergency_menu_settings' );
@@ -197,11 +357,8 @@
 				<?php submit_button(); ?>
 			</form>
 			<?php 
-			break;
+			break; 
 			
-			/***********
-			DO NOT USE UNTIL FULLY TESTED 	
-			************/ 
 			case 'modal':
 			?>
 			
@@ -291,6 +448,6 @@
 				div.custom-admin-menu form textarea { height: 100px; resize: none; width: 55%; }
 			</style>
 		</div>
-	<?php }
+	<?php } */
 	
 ?>
